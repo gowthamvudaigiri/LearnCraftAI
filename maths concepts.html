@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Number Explorer – Grade 2 Math</title>
+  <style>
+    :root{
+      --ink:#23324a;
+      --muted:#5f6f86;
+      --paper:#fffdf8;
+      --card:#ffffff;
+      --purple:#6c5ce7;
+      --blue:#2d9cdb;
+      --green:#27ae60;
+      --orange:#f2994a;
+      --pink:#eb5757;
+      --yellow:#f2c94c;
+      --shadow:0 12px 30px rgba(35,50,74,.12);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, #fff3b6 0, transparent 28%),
+        radial-gradient(circle at 100% 20%, #dff3ff 0, transparent 30%),
+        linear-gradient(180deg,#fffdf8,#f7fbff);
+      min-height:100vh;
+    }
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:1150px;margin:auto;padding:20px}
+    header{
+      background:linear-gradient(135deg,#6c5ce7,#2d9cdb);
+      color:white;
+      border-radius:28px;
+      padding:28px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    header::after{
+      content:"123";
+      position:absolute;
+      right:25px;
+      bottom:-22px;
+      font-size:120px;
+      font-weight:900;
+      opacity:.12;
+      transform:rotate(-8deg);
+    }
+    h1{margin:0 0 8px;font-size:clamp(2rem,5vw,3.5rem)}
+    header p{margin:0;max-width:700px;font-size:1.08rem;line-height:1.6}
+    .top-row{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+    .score-pill{
+      background:rgba(255,255,255,.18);
+      border:2px solid rgba(255,255,255,.35);
+      border-radius:999px;
+      padding:10px 16px;
+      font-weight:800;
+      backdrop-filter:blur(6px);
+    }
+    nav{
+      display:grid;
+      grid-template-columns:repeat(7,minmax(115px,1fr));
+      gap:10px;
+      margin:18px 0;
+    }
+    .nav-btn{
+      border:0;
+      border-radius:16px;
+      padding:14px 10px;
+      background:white;
+      color:var(--ink);
+      font-weight:800;
+      box-shadow:0 7px 18px rgba(35,50,74,.09);
+      transition:.2s;
+    }
+    .nav-btn:hover,.nav-btn.active{transform:translateY(-2px);background:#efeaff;color:#5142cc}
+    .panel{
+      display:none;
+      background:rgba(255,255,255,.88);
+      border:1px solid rgba(108,92,231,.1);
+      border-radius:var(--radius);
+      padding:24px;
+      box-shadow:var(--shadow);
+      margin-bottom:22px;
+    }
+    .panel.active{display:block;animation:fade .3s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    h2{margin-top:0;font-size:clamp(1.55rem,4vw,2.25rem)}
+    h3{margin-bottom:8px}
+    .subtitle{color:var(--muted);line-height:1.6}
+    .lesson-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .card{
+      background:var(--card);
+      border:2px solid #edf0f6;
+      border-radius:18px;
+      padding:18px;
+    }
+    .concept{
+      border-left:8px solid var(--purple);
+      background:#f7f4ff;
+    }
+    .big-number{
+      font-size:clamp(3rem,10vw,6rem);
+      font-weight:900;
+      text-align:center;
+      margin:12px 0;
+      letter-spacing:4px;
+    }
+    .big-result{
+      font-size:clamp(1.7rem,5vw,2.8rem);
+      font-weight:900;
+      text-align:center;
+      min-height:54px;
+      margin:10px 0;
+    }
+    .button-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+    .btn{
+      border:0;border-radius:14px;padding:12px 18px;font-weight:800;
+      background:var(--purple);color:white;box-shadow:0 6px 14px rgba(108,92,231,.2);
+    }
+    .btn.secondary{background:var(--blue)}
+    .btn.green{background:var(--green)}
+    .btn.orange{background:var(--orange)}
+    .btn.light{background:#eef2f7;color:var(--ink);box-shadow:none}
+    .btn:active{transform:scale(.98)}
+    .number-picker{
+      width:100%;
+      font-size:2rem;
+      font-weight:900;
+      text-align:center;
+      border:3px solid #cfc8ff;
+      border-radius:14px;
+      padding:10px;
+      color:var(--ink);
+      background:white;
+    }
+    .feedback{
+      min-height:38px;
+      border-radius:12px;
+      padding:9px 12px;
+      margin-top:12px;
+      font-weight:800;
+      text-align:center;
+    }
+    .feedback.good{background:#dcf8e7;color:#176b3b}
+    .feedback.bad{background:#ffe2df;color:#9c2d26}
+    .feedback.info{background:#e7f3ff;color:#1e5f8a}
+    .odd-even-track{
+      display:grid;
+      grid-template-columns:repeat(10,1fr);
+      gap:7px;
+      margin:16px 0;
+    }
+    .num-tile{
+      aspect-ratio:1;
+      border:0;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      font-size:1.1rem;
+      background:#f0f2f7;
+      color:var(--ink);
+    }
+    .num-tile.odd{background:#ffe5ed;color:#a92952}
+    .num-tile.even{background:#dff2ff;color:#176690}
+    .sort-zone-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:15px}
+    .sort-zone{border:3px dashed #c8ced8;border-radius:18px;padding:16px;text-align:center;min-height:150px}
+    .sort-zone.odd-zone{background:#fff4f7}
+    .sort-zone.even-zone{background:#eff9ff}
+    .choice-number{
+      display:inline-grid;place-items:center;
+      width:85px;height:85px;border-radius:50%;
+      background:linear-gradient(135deg,#f2c94c,#f2994a);
+      color:#533400;font-size:2.4rem;font-weight:900;
+      box-shadow:0 8px 20px rgba(242,153,74,.25);
+      margin:12px;
+    }
+    .digit-row{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-top:16px;
+    }
+    .digit-card{
+      border:3px solid #e5e8ef;
+      border-radius:18px;
+      text-align:center;
+      padding:16px 8px;
+      background:white;
+      transition:.2s;
+    }
+    .digit-card:hover,.digit-card.selected{border-color:var(--purple);transform:translateY(-2px);background:#f6f3ff}
+    .digit{font-size:3.2rem;font-weight:900}
+    .place-label{font-weight:800;color:var(--muted)}
+    .blocks{
+      display:flex;gap:18px;flex-wrap:wrap;justify-content:center;align-items:flex-end;
+      min-height:160px;padding:16px;background:#f9fbfd;border-radius:16px;margin-top:14px;
+    }
+    .hundred-block{
+      width:82px;height:82px;border:3px solid #8c75ff;border-radius:8px;
+      background:
+        linear-gradient(90deg,transparent 9%,rgba(108,92,231,.35) 10%,transparent 11%) 0 0/10% 100%,
+        linear-gradient(transparent 9%,rgba(108,92,231,.35) 10%,transparent 11%) 0 0/100% 10%,
+        #eeeaff;
+    }
+    .ten-rod{
+      width:26px;height:105px;border:3px solid #2d9cdb;border-radius:7px;
+      background:repeating-linear-gradient(to bottom,#dff4ff 0 8px,#8fd1f3 8px 10px);
+    }
+    .one-cube{
+      width:28px;height:28px;border:3px solid #27ae60;border-radius:6px;background:#dcf8e7;
+    }
+    .block-group{text-align:center;font-weight:800}
+    .equation{
+      text-align:center;
+      font-size:clamp(1.5rem,4vw,2.3rem);
+      font-weight:900;
+      padding:18px;
+      border-radius:16px;
+      background:#fff7dc;
+      margin:14px 0;
+    }
+    .answer-input{
+      width:min(420px,100%);
+      display:block;margin:12px auto;
+      border:3px solid #d8dce6;border-radius:14px;
+      padding:12px;text-align:center;font-size:1.5rem;font-weight:800;
+    }
+    .quiz-options{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:15px}
+    .pattern-board{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+      margin:18px 0;
+    }
+    .pattern-choice{
+      min-height:100px;
+      border:3px solid #dfe4ec;
+      border-radius:18px;
+      background:white;
+      color:var(--ink);
+      font-size:clamp(1.25rem,4vw,2rem);
+      font-weight:900;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:12px;
+      transition:.2s;
+    }
+    .pattern-choice:hover{
+      transform:translateY(-3px);
+      border-color:var(--purple);
+      background:#f7f4ff;
+    }
+    .pattern-choice.correct{
+      border-color:var(--green);
+      background:#dcf8e7;
+    }
+    .pattern-choice.wrong{
+      border-color:var(--pink);
+      background:#ffe2df;
+    }
+    .pattern-rule{
+      background:#eef8ff;
+      border-left:7px solid var(--blue);
+      border-radius:14px;
+      padding:14px 16px;
+      font-weight:800;
+      line-height:1.55;
+    }
+    .option{
+      border:2px solid #dfe4ec;background:white;border-radius:15px;
+      padding:14px;font-weight:850;color:var(--ink);
+    }
+    .option:hover{border-color:var(--purple);background:#f7f4ff}
+    .progress{
+      height:14px;background:#e8ecf2;border-radius:999px;overflow:hidden;margin:12px 0 20px;
+    }
+    .progress > div{height:100%;width:0;background:linear-gradient(90deg,#27ae60,#2d9cdb);transition:.3s}
+    .stars{font-size:2rem;text-align:center;letter-spacing:5px;min-height:46px}
+    .tip{
+      background:#fff7dc;border-left:7px solid var(--yellow);
+      border-radius:14px;padding:14px 16px;line-height:1.55;margin-top:15px;
+    }
+    .legend{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .legend span{padding:7px 11px;border-radius:999px;font-weight:800}
+    .odd-key{background:#ffe5ed;color:#a92952}
+    .even-key{background:#dff2ff;color:#176690}
+    .celebrate{
+      position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:999;
+    }
+    .confetti{
+      position:absolute;width:10px;height:16px;top:-20px;
+      animation:fall 1.2s linear forwards;
+    }
+    @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.4}}
+    footer{text-align:center;color:var(--muted);padding:12px 0 25px;font-size:.92rem}
+    @media(max-width:850px){
+      nav{grid-template-columns:repeat(2,1fr)}
+      .lesson-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:520px){
+      .app{padding:10px}
+      header,.panel{padding:18px}
+      .odd-even-track{grid-template-columns:repeat(5,1fr)}
+      .sort-zone-wrap,.quiz-options{grid-template-columns:1fr}
+      .pattern-board{grid-template-columns:repeat(2,1fr)}
+      .digit-row{gap:7px}
+      .digit-card{padding:12px 4px}
+      .digit{font-size:2.5rem}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="top-row">
+      <div>
+        <h1>🔢 Number Explorer</h1>
+        <p>Learn odd and even numbers, face value, place value, expanded form, and standard form through simple activities.</p>
+      </div>
+      <div class="score-pill">⭐ Stars: <span id="starCount">0</span></div>
+    </div>
+  </header>
+
+  <nav aria-label="Learning sections">
+    <button class="nav-btn active" data-panel="welcome">🏠 Start</button>
+    <button class="nav-btn" data-panel="oddEven">🧩 Odd & Even</button>
+    <button class="nav-btn" data-panel="facePlace">🏗️ Face & Place</button>
+    <button class="nav-btn" data-panel="expanded">➕ Expanded Form</button>
+    <button class="nav-btn" data-panel="standard">🔢 Standard Form</button>
+    <button class="nav-btn" data-panel="oddOneOut">🔍 Odd One Out</button>
+    <button class="nav-btn" data-panel="quiz">🏆 Mixed Quiz</button>
+  </nav>
+
+  <main>
+    <section id="welcome" class="panel active">
+      <h2>Welcome, Number Detective! 🕵️</h2>
+      <p class="subtitle">Choose a lesson above. Read the small explanation, try the activity, and collect stars for correct answers.</p>
+      <div class="lesson-grid">
+        <div class="card concept">
+          <h3>Today you will learn</h3>
+          <p>✅ How to tell whether a number is odd or even</p>
+          <p>✅ The difference between face value and place value</p>
+          <p>✅ How to break a number into expanded form</p>
+          <p>✅ How to rebuild it in standard form</p>
+          <p>✅ How to identify the odd one out in exam patterns</p>
+        </div>
+        <div class="card">
+          <h3>Golden Rule 🌟</h3>
+          <div class="equation">Hundreds + Tens + Ones</div>
+          <p class="subtitle">Example: <strong>347 = 300 + 40 + 7</strong></p>
+          <button class="btn" onclick="openPanel('oddEven')">Begin Learning</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="oddEven" class="panel">
+      <h2>Odd and Even Numbers</h2>
+      <div class="lesson-grid">
+        <div class="card concept">
+          <h3>Easy trick</h3>
+          <p><strong>Even numbers</strong> end in <strong>0, 2, 4, 6, or 8</strong>.</p>
+          <p><strong>Odd numbers</strong> end in <strong>1, 3, 5, 7, or 9</strong>.</p>
+          <div class="legend"><span class="odd-key">Odd</span><span class="even-key">Even</span></div>
+          <div id="numberTrack" class="odd-even-track"></div>
+        </div>
+        <div class="card">
+          <h3>Odd or Even?</h3>
+          <div id="oeNumber" class="choice-number">12</div>
+          <div class="button-row">
+            <button class="btn orange" onclick="answerOddEven('odd')">Odd</button>
+            <button class="btn secondary" onclick="answerOddEven('even')">Even</button>
+          </div>
+          <div id="oeFeedback" class="feedback info">Look at the last digit.</div>
+          <button class="btn light" onclick="newOddEven()">New Number</button>
+        </div>
+      </div>
+      <div class="tip">💡 Pairing idea: An even number of objects can be placed into pairs with none left over. An odd number leaves one object alone.</div>
+    </section>
+
+    <section id="facePlace" class="panel">
+      <h2>Face Value and Place Value</h2>
+      <div class="lesson-grid">
+        <div class="card concept">
+          <h3>What is the difference?</h3>
+          <p><strong>Face value</strong> is the digit itself.</p>
+          <p><strong>Place value</strong> is the value of the digit because of where it sits.</p>
+          <div class="equation">In 352, the digit 5 means 50.</div>
+          <p class="subtitle">Face value of 5 = 5<br>Place value of 5 = 50</p>
+        </div>
+        <div class="card">
+          <h3>Explore a number</h3>
+          <input id="placeNumber" class="number-picker" type="number" min="100" max="999" value="352" />
+          <p class="subtitle" style="text-align:center">Click a digit below.</p>
+          <div id="digitRow" class="digit-row"></div>
+          <div id="placeFeedback" class="feedback info">Choose a digit.</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h3 style="text-align:center">Base-ten blocks</h3>
+        <div id="blocks" class="blocks"></div>
+      </div>
+    </section>
+
+    <section id="expanded" class="panel">
+      <h2>Expanded Form</h2>
+      <div class="lesson-grid">
+        <div class="card concept">
+          <h3>Stretch the number</h3>
+          <p>Expanded form shows the value of every digit.</p>
+          <div class="equation">426 = 400 + 20 + 6</div>
+          <p class="subtitle">4 hundreds + 2 tens + 6 ones</p>
+        </div>
+        <div class="card">
+          <h3>Write the expanded form</h3>
+          <div id="expandedQuestion" class="big-number">426</div>
+          <input id="expandedInput" class="answer-input" placeholder="Example: 400 + 20 + 6" />
+          <div class="button-row">
+            <button class="btn green" onclick="checkExpanded()">Check</button>
+            <button class="btn light" onclick="showExpandedHint()">Hint</button>
+            <button class="btn secondary" onclick="newExpanded()">New Number</button>
+          </div>
+          <div id="expandedFeedback" class="feedback info">Break it into hundreds, tens, and ones.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="standard" class="panel">
+      <h2>Standard Form</h2>
+      <div class="lesson-grid">
+        <div class="card concept">
+          <h3>Build the number</h3>
+          <p>Standard form is the usual way we write a number.</p>
+          <div class="equation">500 + 30 + 8 = 538</div>
+          <p class="subtitle">Put the hundreds, tens, and ones together.</p>
+        </div>
+        <div class="card">
+          <h3>Write the standard form</h3>
+          <div id="standardQuestion" class="equation">500 + 30 + 8</div>
+          <input id="standardInput" class="answer-input" type="number" placeholder="Type the number" />
+          <div class="button-row">
+            <button class="btn green" onclick="checkStandard()">Check</button>
+            <button class="btn secondary" onclick="newStandard()">New Question</button>
+          </div>
+          <div id="standardFeedback" class="feedback info">Add the parts together.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="oddOneOut" class="panel">
+      <h2>Odd One Out Patterns 🔍</h2>
+      <p class="subtitle">Find the item that does not follow the same rule as the others. This is a common exam question.</p>
+
+      <div class="lesson-grid">
+        <div class="card concept">
+          <h3>How to solve it</h3>
+          <p><strong>Step 1:</strong> Look carefully at every item.</p>
+          <p><strong>Step 2:</strong> Find what three items have in common.</p>
+          <p><strong>Step 3:</strong> Choose the one that follows a different rule.</p>
+          <div class="pattern-rule">
+            Example: 2, 4, 7, 8<br>
+            Three numbers are even. <strong>7</strong> is odd, so 7 is the odd one out.
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Exam Tip 🌟</h3>
+          <p>Check these clues:</p>
+          <p>• Odd or even</p>
+          <p>• Number of digits</p>
+          <p>• Increasing or decreasing pattern</p>
+          <p>• Same ones digit</p>
+          <p>• Same shape, direction, or size</p>
+          <button class="btn" onclick="newOddOneOut()">Start Practice</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div id="oddOneOutCount" style="font-weight:800;color:var(--muted)">Practice Question</div>
+        <div id="oddOneOutPrompt" class="big-result">Which one is the odd one out?</div>
+        <div id="patternBoard" class="pattern-board"></div>
+        <div class="button-row">
+          <button class="btn light" onclick="showOddOneOutHint()">Hint</button>
+          <button class="btn secondary" onclick="newOddOneOut()">Next Question</button>
+        </div>
+        <div id="oddOneOutFeedback" class="feedback info">Look for the rule shared by three choices.</div>
+      </div>
+    </section>
+
+    <section id="quiz" class="panel">
+      <h2>Mixed Number Quiz 🏆</h2>
+      <p class="subtitle">Answer 10 questions. Every correct answer earns a star.</p>
+      <div class="progress"><div id="quizProgress"></div></div>
+      <div class="stars" id="quizStars"></div>
+      <div class="card">
+        <div id="quizCount" style="font-weight:800;color:var(--muted)">Question 1 of 10</div>
+        <div id="quizQuestion" class="big-result"></div>
+        <div id="quizOptions" class="quiz-options"></div>
+        <input id="quizInput" class="answer-input" style="display:none" />
+        <div class="button-row">
+          <button id="quizSubmit" class="btn green" style="display:none" onclick="submitQuizInput()">Check</button>
+          <button id="quizNext" class="btn secondary" style="display:none" onclick="nextQuizQuestion()">Next</button>
+          <button id="quizRestart" class="btn orange" style="display:none" onclick="startQuiz()">Play Again</button>
+        </div>
+        <div id="quizFeedback" class="feedback info">Choose the best answer.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Made for joyful Grade 2 math practice. Progress is saved on this device.</footer>
+</div>
+<div id="celebrate" class="celebrate"></div>
+
+<script>
+  let stars = Number(localStorage.getItem("numberExplorerStars") || 0);
+  document.getElementById("starCount").textContent = stars;
+
+  function addStar(){
+    stars++;
+    localStorage.setItem("numberExplorerStars", stars);
+    document.getElementById("starCount").textContent = stars;
+    confetti();
+  }
+
+  function confetti(){
+    const box = document.getElementById("celebrate");
+    const colors = ["#6c5ce7","#2d9cdb","#27ae60","#f2994a","#eb5757","#f2c94c"];
+    for(let i=0;i<24;i++){
+      const p=document.createElement("span");
+      p.className="confetti";
+      p.style.left=Math.random()*100+"vw";
+      p.style.background=colors[Math.floor(Math.random()*colors.length)];
+      p.style.animationDelay=(Math.random()*.25)+"s";
+      box.appendChild(p);
+      setTimeout(()=>p.remove(),1600);
+    }
+  }
+
+  function openPanel(id){
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active", b.dataset.panel===id));
+    document.getElementById(id).classList.add("active");
+    window.scrollTo({top:0,behavior:"smooth"});
+    if(id==="quiz") startQuiz();
+  }
+  document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>openPanel(b.dataset.panel)));
+
+  // Odd and even
+  const track=document.getElementById("numberTrack");
+  for(let i=1;i<=20;i++){
+    const tile=document.createElement("div");
+    tile.className="num-tile "+(i%2?"odd":"even");
+    tile.textContent=i;
+    track.appendChild(tile);
+  }
+  let oeCurrent=12;
+  function newOddEven(){
+    oeCurrent=Math.floor(Math.random()*100)+1;
+    document.getElementById("oeNumber").textContent=oeCurrent;
+    setFeedback("oeFeedback","Look at the last digit.","info");
+  }
+  function answerOddEven(answer){
+    const correct=oeCurrent%2===0?"even":"odd";
+    if(answer===correct){
+      setFeedback("oeFeedback","Correct! "+oeCurrent+" is "+correct+".","good");
+      addStar();
+      setTimeout(newOddEven,850);
+    }else{
+      setFeedback("oeFeedback","Try again. The last digit is "+String(oeCurrent).slice(-1)+".","bad");
+    }
+  }
+
+  // Face value and place value
+  const placeInput=document.getElementById("placeNumber");
+  placeInput.addEventListener("input",renderPlaceValue);
+  function valid3Digit(){
+    let n=Math.max(100,Math.min(999,Number(placeInput.value)||100));
+    placeInput.value=n;
+    return n;
+  }
+  function renderPlaceValue(){
+    const n=valid3Digit();
+    const digits=String(n).padStart(3,"0").split("").map(Number);
+    const labels=["Hundreds","Tens","Ones"];
+    const multipliers=[100,10,1];
+    const row=document.getElementById("digitRow");
+    row.innerHTML="";
+    digits.forEach((d,i)=>{
+      const card=document.createElement("button");
+      card.className="digit-card";
+      card.innerHTML='<div class="digit">'+d+'</div><div class="place-label">'+labels[i]+'</div>';
+      card.onclick=()=>{
+        document.querySelectorAll(".digit-card").forEach(x=>x.classList.remove("selected"));
+        card.classList.add("selected");
+        setFeedback("placeFeedback",
+          "Face value = "+d+" | Place value = "+(d*multipliers[i]),
+          "good");
+      };
+      row.appendChild(card);
+    });
+    renderBlocks(digits);
+  }
+  function renderBlocks(digits){
+    const [h,t,o]=digits;
+    const blocks=document.getElementById("blocks");
+    blocks.innerHTML="";
+    [
+      {count:h, cls:"hundred-block", label:"Hundreds"},
+      {count:t, cls:"ten-rod", label:"Tens"},
+      {count:o, cls:"one-cube", label:"Ones"}
+    ].forEach(group=>{
+      const wrap=document.createElement("div");
+      wrap.className="block-group";
+      const inner=document.createElement("div");
+      inner.style.display="flex";
+      inner.style.gap="5px";
+      inner.style.flexWrap="wrap";
+      inner.style.maxWidth=group.cls==="hundred-block"?"280px":"170px";
+      inner.style.justifyContent="center";
+      for(let i=0;i<group.count;i++){
+        const el=document.createElement("div");
+        el.className=group.cls;
+        inner.appendChild(el);
+      }
+      const label=document.createElement("div");
+      label.textContent=group.count+" "+group.label;
+      wrap.appendChild(inner);
+      wrap.appendChild(label);
+      blocks.appendChild(wrap);
+    });
+  }
+
+  // Expanded form
+  let expandedNumber=426;
+  function numberParts(n){
+    return [Math.floor(n/100)*100, Math.floor((n%100)/10)*10, n%10];
+  }
+  function expandedText(n){
+    const parts=numberParts(n);
+    return parts.filter((x,i)=>x!==0 || i===2).join(" + ");
+  }
+  function normalizeExpression(value){
+    return value.replace(/\s/g,"").replace(/,/g,"");
+  }
+  function newExpanded(){
+    expandedNumber=Math.floor(Math.random()*900)+100;
+    document.getElementById("expandedQuestion").textContent=expandedNumber;
+    document.getElementById("expandedInput").value="";
+    setFeedback("expandedFeedback","Break it into hundreds, tens, and ones.","info");
+  }
+  function checkExpanded(){
+    const entered=normalizeExpression(document.getElementById("expandedInput").value);
+    const correct=normalizeExpression(expandedText(expandedNumber));
+    let mathematicallyCorrect=false;
+    try{
+      if(/^[0-9+ ]+$/.test(document.getElementById("expandedInput").value)){
+        mathematicallyCorrect=Function('"use strict";return ('+document.getElementById("expandedInput").value+')')()===expandedNumber;
+      }
+    }catch(e){}
+    if(entered===correct || mathematicallyCorrect){
+      setFeedback("expandedFeedback","Excellent! "+expandedNumber+" = "+expandedText(expandedNumber),"good");
+      addStar();
+      setTimeout(newExpanded,1000);
+    }else{
+      setFeedback("expandedFeedback","Almost! Think: "+Math.floor(expandedNumber/100)+" hundreds, "+Math.floor((expandedNumber%100)/10)+" tens, "+expandedNumber%10+" ones.","bad");
+    }
+  }
+  function showExpandedHint(){
+    const [h,t,o]=String(expandedNumber).split("");
+    setFeedback("expandedFeedback",h+" hundreds + "+t+" tens + "+o+" ones","info");
+  }
+
+  // Standard form
+  let standardNumber=538;
+  function newStandard(){
+    standardNumber=Math.floor(Math.random()*900)+100;
+    document.getElementById("standardQuestion").textContent=expandedText(standardNumber);
+    document.getElementById("standardInput").value="";
+    setFeedback("standardFeedback","Add the parts together.","info");
+  }
+  function checkStandard(){
+    const val=Number(document.getElementById("standardInput").value);
+    if(val===standardNumber){
+      setFeedback("standardFeedback","Correct! The standard form is "+standardNumber+".","good");
+      addStar();
+      setTimeout(newStandard,1000);
+    }else{
+      setFeedback("standardFeedback","Try again. Put the hundreds, tens, and ones together.","bad");
+    }
+  }
+
+  // Odd one out patterns
+  const oddOneOutQuestions = [
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["12","18","25","30"],
+      answer:2,
+      hint:"Check whether each number is odd or even.",
+      explanation:"12, 18, and 30 are even. 25 is odd."
+    },
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["41","53","67","80"],
+      answer:3,
+      hint:"Look at the last digit.",
+      explanation:"41, 53, and 67 are odd. 80 is even."
+    },
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["5","8","11","14"],
+      answer:0,
+      hint:"Three numbers form a clear group. Check the sequence and parity.",
+      explanation:"8, 11, and 14 increase by 3. 5 does not belong to that group."
+    },
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["22","44","66","77"],
+      answer:3,
+      hint:"Look at whether the repeated-digit numbers are odd or even.",
+      explanation:"22, 44, and 66 are even. 77 is odd."
+    },
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["103","205","407","508"],
+      answer:3,
+      hint:"Check the last digit.",
+      explanation:"103, 205, and 407 are odd. 508 is even."
+    },
+    {
+      prompt:"Which one does not belong?",
+      choices:["▲","▲","●","▲"],
+      answer:2,
+      hint:"Compare the shapes.",
+      explanation:"Three choices are triangles. The circle is different."
+    },
+    {
+      prompt:"Which one does not belong?",
+      choices:["→","→","←","→"],
+      answer:2,
+      hint:"Look at the direction.",
+      explanation:"Three arrows point right. One arrow points left."
+    },
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["10","20","30","35"],
+      answer:3,
+      hint:"Three numbers end with the same digit.",
+      explanation:"10, 20, and 30 end in 0. 35 ends in 5."
+    },
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["7","17","27","38"],
+      answer:3,
+      hint:"Look at the ones digit.",
+      explanation:"7, 17, and 27 end in 7. 38 does not."
+    },
+    {
+      prompt:"Which number is the odd one out?",
+      choices:["101","202","303","415"],
+      answer:3,
+      hint:"Check whether the first and last digits match.",
+      explanation:"101, 202, and 303 have matching first and last digits. 415 does not."
+    }
+  ];
+
+  let oddOneOutCurrent = null;
+  let oddOneOutSolved = false;
+  let oddOneOutNumber = 0;
+
+  function newOddOneOut(){
+    oddOneOutCurrent = oddOneOutQuestions[Math.floor(Math.random()*oddOneOutQuestions.length)];
+    oddOneOutSolved = false;
+    oddOneOutNumber++;
+    document.getElementById("oddOneOutCount").textContent = "Practice Question " + oddOneOutNumber;
+    document.getElementById("oddOneOutPrompt").textContent = oddOneOutCurrent.prompt;
+    const board = document.getElementById("patternBoard");
+    board.innerHTML = "";
+    oddOneOutCurrent.choices.forEach((choice,index)=>{
+      const button = document.createElement("button");
+      button.className = "pattern-choice";
+      button.textContent = choice;
+      button.onclick = ()=>answerOddOneOut(index,button);
+      board.appendChild(button);
+    });
+    setFeedback("oddOneOutFeedback","Look for the rule shared by three choices.","info");
+  }
+
+  function answerOddOneOut(index,button){
+    if(oddOneOutSolved) return;
+    const buttons = [...document.querySelectorAll("#patternBoard .pattern-choice")];
+    if(index === oddOneOutCurrent.answer){
+      oddOneOutSolved = true;
+      button.classList.add("correct");
+      setFeedback("oddOneOutFeedback","Correct! " + oddOneOutCurrent.explanation,"good");
+      addStar();
+      buttons.forEach(b=>b.disabled=true);
+    }else{
+      button.classList.add("wrong");
+      setFeedback("oddOneOutFeedback","Not this one. Try again and look for a common rule.","bad");
+      setTimeout(()=>button.classList.remove("wrong"),650);
+    }
+  }
+
+  function showOddOneOutHint(){
+    if(!oddOneOutCurrent) newOddOneOut();
+    setFeedback("oddOneOutFeedback","Hint: " + oddOneOutCurrent.hint,"info");
+  }
+
+  // Mixed quiz
+  let quizIndex=0, quizScore=0, quizAnswered=false, currentQuiz=null;
+  function startQuiz(){
+    quizIndex=0; quizScore=0; quizAnswered=false;
+    document.getElementById("quizRestart").style.display="none";
+    document.getElementById("quizStars").textContent="";
+    nextQuizQuestion(true);
+  }
+  function buildQuiz(){
+    const type=Math.floor(Math.random()*5);
+    const n=Math.floor(Math.random()*900)+100;
+    if(type===0){
+      const small=Math.floor(Math.random()*100)+1;
+      return {
+        mode:"options",
+        question:"Is "+small+" odd or even?",
+        answer:small%2===0?"Even":"Odd",
+        options:["Odd","Even"],
+        explanation:"The last digit is "+String(small).slice(-1)+"."
+      };
+    }
+    if(type===1){
+      const pos=Math.floor(Math.random()*3);
+      const digit=Number(String(n)[pos]);
+      const mult=[100,10,1][pos];
+      const labels=["hundreds","tens","ones"];
+      const correct=digit*mult;
+      let opts=[correct,digit,correct+10,Math.max(0,correct-10)];
+      opts=[...new Set(opts)].slice(0,4);
+      while(opts.length<4) opts.push(Math.floor(Math.random()*9+1)*10);
+      return {
+        mode:"options",
+        question:"What is the place value of "+digit+" in "+n+"? ("+labels[pos]+" place)",
+        answer:String(correct),
+        options:shuffle(opts.map(String)),
+        explanation:"Digit "+digit+" in the "+labels[pos]+" place has value "+correct+"."
+      };
+    }
+    if(type===2){
+      return {
+        mode:"input",
+        question:"Write "+n+" in expanded form.",
+        answer:expandedText(n),
+        explanation:n+" = "+expandedText(n),
+        evaluator:v=>{
+          let ok=false;
+          try{
+            if(/^[0-9+ ]+$/.test(v)) ok=Function('"use strict";return ('+v+')')()===n;
+          }catch(e){}
+          return normalizeExpression(v)===normalizeExpression(expandedText(n)) || ok;
+        }
+      };
+    }
+    if(type===3){
+      return {
+        mode:"input",
+        question:"Write "+expandedText(n)+" in standard form.",
+        answer:String(n),
+        explanation:"The standard form is "+n+".",
+        evaluator:v=>Number(v)===n
+      };
+    }
+    const oo = oddOneOutQuestions[Math.floor(Math.random()*oddOneOutQuestions.length)];
+    return {
+      mode:"options",
+      question:oo.prompt+"  "+oo.choices.join(", "),
+      answer:oo.choices[oo.answer],
+      options:shuffle([...oo.choices]),
+      explanation:oo.explanation
+    };
+  }
+  function nextQuizQuestion(initial=false){
+    if(!initial) quizIndex++;
+    if(quizIndex>=10){
+      finishQuiz();
+      return;
+    }
+    quizAnswered=false;
+    currentQuiz=buildQuiz();
+    document.getElementById("quizCount").textContent="Question "+(quizIndex+1)+" of 10";
+    document.getElementById("quizQuestion").textContent=currentQuiz.question;
+    document.getElementById("quizProgress").style.width=(quizIndex*10)+"%";
+    document.getElementById("quizNext").style.display="none";
+    document.getElementById("quizFeedback").className="feedback info";
+    document.getElementById("quizFeedback").textContent="Choose or type your answer.";
+    const options=document.getElementById("quizOptions");
+    const input=document.getElementById("quizInput");
+    const submit=document.getElementById("quizSubmit");
+    options.innerHTML="";
+    if(currentQuiz.mode==="options"){
+      options.style.display="grid";
+      input.style.display="none";
+      submit.style.display="none";
+      currentQuiz.options.forEach(opt=>{
+        const b=document.createElement("button");
+        b.className="option";
+        b.textContent=opt;
+        b.onclick=()=>answerQuiz(String(opt));
+        options.appendChild(b);
+      });
+    }else{
+      options.style.display="none";
+      input.style.display="block";
+      input.value="";
+      input.placeholder=currentQuiz.answer.includes("+")?"Example: 300 + 20 + 4":"Type the number";
+      submit.style.display="inline-block";
+      setTimeout(()=>input.focus(),100);
+    }
+  }
+  function submitQuizInput(){
+    answerQuiz(document.getElementById("quizInput").value);
+  }
+  function answerQuiz(value){
+    if(quizAnswered) return;
+    quizAnswered=true;
+    const correct=currentQuiz.evaluator?currentQuiz.evaluator(value):value===currentQuiz.answer;
+    if(correct){
+      quizScore++;
+      addStar();
+      setFeedback("quizFeedback","Correct! "+currentQuiz.explanation,"good");
+    }else{
+      setFeedback("quizFeedback","The answer is "+currentQuiz.answer+". "+currentQuiz.explanation,"bad");
+    }
+    document.getElementById("quizSubmit").style.display="none";
+    document.getElementById("quizNext").style.display="inline-block";
+    document.getElementById("quizStars").textContent="⭐".repeat(quizScore);
+    document.getElementById("quizProgress").style.width=((quizIndex+1)*10)+"%";
+  }
+  function finishQuiz(){
+    document.getElementById("quizCount").textContent="Quiz complete!";
+    document.getElementById("quizQuestion").textContent="You scored "+quizScore+" out of 10";
+    document.getElementById("quizOptions").style.display="none";
+    document.getElementById("quizInput").style.display="none";
+    document.getElementById("quizSubmit").style.display="none";
+    document.getElementById("quizNext").style.display="none";
+    document.getElementById("quizRestart").style.display="inline-block";
+    setFeedback("quizFeedback",
+      quizScore>=8?"Amazing work! You are a Number Champion!":
+      quizScore>=5?"Good job! Practice once more to become even stronger.":
+      "Nice try! Review the lessons and play again.",
+      quizScore>=5?"good":"info");
+    if(quizScore>=8) confetti();
+  }
+
+  function shuffle(arr){
+    return arr.sort(()=>Math.random()-.5);
+  }
+  function setFeedback(id,text,type){
+    const el=document.getElementById(id);
+    el.className="feedback "+type;
+    el.textContent=text;
+  }
+
+  renderPlaceValue();
+  newOddEven();
+  newExpanded();
+  newStandard();
+  newOddOneOut();
+
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+      const active=document.querySelector(".panel.active");
+      if(active?.id==="expanded") checkExpanded();
+      if(active?.id==="standard") checkStandard();
+      if(active?.id==="quiz" && currentQuiz?.mode==="input" && !quizAnswered) submitQuizInput();
+    }
+  });
+</script>
+</body>
+</html>

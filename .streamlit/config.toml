@@ -1,0 +1,9 @@
+[server]
+maxUploadSize = 50
+
+[theme]
+primaryColor = "#5B4CC4"
+backgroundColor = "#FBFBFD"
+secondaryBackgroundColor = "#F3F4F8"
+textColor = "#172033"
+font = "sans serif"
