@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import base64
 import json
 import re
 from pathlib import Path
 from typing import Any
 
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 from src.models import GeneratedQuiz, GenerationRequest, LessonPlan, SourceAnalysis, ValidationReport
 
 PROMPT_DIR = Path(__file__).parents[1] / "prompts"
@@ -29,6 +31,31 @@ def _source_payload(sources: list[dict]) -> list[dict[str, Any]]:
         }
         for source in sources
     ]
+
+def _source_content_blocks(sources: list[dict]) -> list[dict[str, Any]]:
+    blocks=[]
+    for source in sources:
+        data=source.get("analysis_data")
+        mime_type=source.get("mime_type")
+        if not isinstance(data,(bytes,bytearray)) or not mime_type:
+            continue
+        encoded=base64.b64encode(data).decode("ascii")
+        if mime_type == "application/pdf":
+            blocks.append({
+                "type":"file",
+                "source_type":"base64",
+                "mime_type":mime_type,
+                "data":encoded,
+                "filename":source.get("filename") or "source.pdf",
+            })
+        elif mime_type.startswith("image/"):
+            blocks.append({
+                "type":"image",
+                "source_type":"base64",
+                "mime_type":mime_type,
+                "data":encoded,
+            })
+    return blocks
 
 def friendly_llm_error(error: Exception) -> str:
     message = re.sub(r"sk-[A-Za-z0-9_-]+", "[redacted]", str(error))
@@ -65,20 +92,22 @@ class OpenAIContentProvider:
             client_options["reasoning"] = {"effort": "none"}
         self.client = client or ChatOpenAI(**client_options)
 
-    def _invoke(self, schema, system_prompt: str, payload: dict[str, Any]):
+    def _invoke(self, schema, system_prompt: str, payload: dict[str, Any], content_blocks: list[dict[str, Any]] | None = None):
         structured = self.client.with_structured_output(schema, method="json_schema")
-        return structured.invoke(
-            [
-                ("system", system_prompt),
-                ("human", json.dumps(payload, ensure_ascii=False, default=str)),
-            ]
+        payload_text=json.dumps(payload,ensure_ascii=False,default=str)
+        human=(
+            HumanMessage(content=[{"type":"text","text":payload_text},*(content_blocks or [])])
+            if content_blocks
+            else ("human",payload_text)
         )
+        return structured.invoke([("system",system_prompt),human])
 
     def analyze(self, request: GenerationRequest, sources: list[dict]) -> SourceAnalysis:
         return self._invoke(
             SourceAnalysis,
             _prompt("source_analyst.md"),
             {"request": _request_payload(request), "untrusted_sources": _source_payload(sources)},
+            _source_content_blocks(sources),
         )
 
     def generate_lesson(self, request: GenerationRequest, analysis: SourceAnalysis) -> LessonPlan:

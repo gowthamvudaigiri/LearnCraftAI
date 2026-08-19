@@ -30,6 +30,23 @@ def test_html_is_self_contained_and_escaped(generation_request):
     assert "&lt;script&gt;" in html and "https://" not in html and "@media print" in quiz
     assert "canonical_answer" in quiz and "window.print" in quiz
 
+def test_visual_aids_render_in_lesson_quiz_and_pdf(generation_request):
+    an=analyze(generation_request);lesson=lesson_for(generation_request,an);bp,qs=questions_for(generation_request,an)
+    lesson.sections[0].visual="0 -- 1 -- 2 -- 3"
+    qs[0].visual="[o] [o] + [o] = ?"
+    lesson_html=render_lesson_html(lesson,"abc").decode();quiz_html=render_quiz_html(bp,qs,"abc").decode()
+    assert "Visual aid" in lesson_html and "0 -- 1 -- 2 -- 3" in lesson_html
+    assert "Use this visual" in quiz_html and "[o] [o] + [o] = ?" in quiz_html
+    student,_=render_quiz_pdfs(bp,qs,"abc")
+    student_text="".join(p.get_text() for p in fitz.open(stream=student,filetype="pdf"))
+    assert "Visual:" in student_text
+
+def test_seed_is_not_exposed_in_pdf_footer(generation_request):
+    an=analyze(generation_request);bp,qs=questions_for(generation_request,an)
+    student,_=render_quiz_pdfs(bp,qs,"abc")
+    text="".join(p.get_text() for p in fitz.open(stream=student,filetype="pdf"))
+    assert "seed" not in text.casefold()
+
 def test_pdf_answer_separation(generation_request):
     an=analyze(generation_request);bp,qs=questions_for(generation_request,an);student,key=render_quiz_pdfs(bp,qs,"abc")
     assert student.startswith(b"%PDF") and key.startswith(b"%PDF")
@@ -46,6 +63,36 @@ def test_file_validation_and_extraction():
     with pytest.raises(ValueError): validate_uploads([("bad.exe",b"x")])
     result=extract_file("notes.txt",b"fractions and halves")
     assert "fractions" in result["text"] and result["status"]=="read"
+
+def test_scanned_pdf_is_prepared_for_model_vision():
+    doc=fitz.open();doc.new_page()
+    pdf=doc.tobytes();doc.close()
+    result=extract_file("scan.pdf",pdf)
+    assert result["text"]==""
+    assert result["status"]=="vision ready"
+    assert result["mime_type"]=="application/pdf"
+    assert result["analysis_data"].startswith(b"%PDF")
+
+def test_source_analysis_rejects_empty_concepts(generation_request):
+    analysis=analyze(generation_request)
+    payload=analysis.model_dump()
+    payload["concepts"]=[]
+    with pytest.raises(ValueError): SourceAnalysis.model_validate(payload)
+
+def test_provider_builds_pdf_file_input_block():
+    from src.providers.openai_provider import _source_content_blocks
+    blocks=_source_content_blocks([{
+        "filename":"scan.pdf",
+        "mime_type":"application/pdf",
+        "analysis_data":b"%PDF-test",
+    }])
+    assert blocks==[{
+        "type":"file",
+        "source_type":"base64",
+        "mime_type":"application/pdf",
+        "data":"JVBERi10ZXN0",
+        "filename":"scan.pdf",
+    }]
 
 def test_graph_compiles():
     from src.graph import build_graph
