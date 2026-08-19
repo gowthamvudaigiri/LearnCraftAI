@@ -83,13 +83,13 @@ class SourceAnalysis(StructuredOutputModel):
     detected_subject: str = ""
     detected_grade: int | None = None
     detected_curriculum: str = "Not specified"
-    concepts: list[str]
-    learning_objectives: list[str]
+    concepts: list[str] = Field(min_length=1)
+    learning_objectives: list[str] = Field(min_length=1)
     prerequisites: list[str] = Field(default_factory=list)
     vocabulary: list[str] = Field(default_factory=list)
     common_misconceptions: list[str] = Field(default_factory=list)
     worked_example_patterns: list[str] = Field(default_factory=list)
-    question_patterns: list[SectionPattern]
+    question_patterns: list[SectionPattern] = Field(min_length=1)
     evidence: list[SourceEvidence] = Field(default_factory=list)
     conflicts: list[str] = Field(default_factory=list)
     ambiguities: list[str] = Field(default_factory=list)
@@ -142,6 +142,7 @@ class Question(StructuredOutputModel):
     objective_ids: list[str]
     question_type: QuestionType
     prompt: str
+    visual: str = ""
     options: list[str] = Field(default_factory=list)
     canonical_answer: str
     alternate_answers: list[str] = Field(default_factory=list)

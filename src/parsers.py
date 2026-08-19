@@ -5,6 +5,14 @@ from bs4 import BeautifulSoup
 import fitz
 from src.config import SETTINGS, SUPPORTED_EXTENSIONS
 
+MIME_TYPES = {
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+}
+
 def validate_uploads(files: list[tuple[str, bytes]]) -> None:
     if len(files) > SETTINGS.max_files:
         raise ValueError(f"Upload at most {SETTINGS.max_files} files.")
@@ -22,15 +30,35 @@ def validate_uploads(files: list[tuple[str, bytes]]) -> None:
             raise ValueError(f"{name} is not a valid PNG.")
 
 def extract_file(name: str, data: bytes) -> dict:
-    ext = Path(name).suffix.lower(); text = ""; pages = 1
+    ext = Path(name).suffix.lower(); text = ""; pages = 1; analysis_data = None
     if ext == ".pdf":
         doc = fitz.open(stream=data, filetype="pdf")
         if doc.needs_pass: raise ValueError(f"{name} is encrypted.")
         pages = min(len(doc), SETTINGS.max_pdf_pages)
         text = "\n".join(doc[i].get_text("text") for i in range(pages))
+        if len(doc) > SETTINGS.max_pdf_pages:
+            limited = fitz.open()
+            limited.insert_pdf(doc,from_page=0,to_page=SETTINGS.max_pdf_pages-1)
+            analysis_data = limited.tobytes(garbage=4,deflate=True)
+            limited.close()
+        else:
+            analysis_data = data
         doc.close()
     elif ext in {".html", ".htm"}:
         text = BeautifulSoup(data, "html.parser").get_text(" ", strip=True)
     elif ext in {".txt", ".md"}:
         text = data.decode("utf-8", errors="replace")
-    return {"source_id": hashlib.sha256(data).hexdigest()[:16], "filename": name, "text": text[:50000], "pages": pages, "status": "read" if text.strip() else "image/scan requires vision"}
+    elif ext in {".png", ".jpg", ".jpeg", ".webp"}:
+        analysis_data = data
+
+    uses_vision = analysis_data is not None
+    status = "vision ready" if uses_vision and not text.strip() else "text + vision ready" if uses_vision else "read"
+    return {
+        "source_id": hashlib.sha256(data).hexdigest()[:16],
+        "filename": name,
+        "text": text[:50000],
+        "pages": pages,
+        "status": status,
+        "mime_type": MIME_TYPES.get(ext),
+        "analysis_data": analysis_data,
+    }

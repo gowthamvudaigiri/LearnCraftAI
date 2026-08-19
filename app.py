@@ -165,15 +165,19 @@ with st.expander("Configuration details" if st.session_state.request is None els
             hints=e.checkbox("Include hints",True)
             examples=f.checkbox("Worked examples",True)
             explanations=g.checkbox("Answer explanations",True)
-            seed=st.number_input("Random seed",0,2_147_483_647,2025,help="Reuse a seed when you want a reproducible paper plan.")
         with st.expander("Optional guidance",icon=":material/edit_note:"):
             goals=st.text_area("Learning goals",placeholder="One goal per line")
             special=st.text_area("Teacher instructions",placeholder="For example: use everyday objects and avoid negative numbers")
         saved=st.form_submit_button("Save and continue",type="primary",width="stretch",icon=":material/arrow_forward:")
 if saved:
     concepts=[x.strip() for x in re.split(r"[,;\n]",concepts_text) if x.strip()]
+    internal_seed=(
+        st.session_state.request.random_seed
+        if st.session_state.request is not None
+        else random.SystemRandom().randint(1,2_147_483_647)
+    )
     try:
-        st.session_state.request=GenerationRequest(input_mode=mode,grade_level=grade,subject=subject,curriculum=curriculum,concepts=concepts,learning_goals=[x.strip() for x in goals.splitlines() if x.strip()],special_instructions=special or None,difficulty=difficulty,duration_minutes=duration,question_count=count,total_marks=marks,preferred_question_types=qtypes or [QuestionType.MCQ],include_hints=hints,include_worked_examples=examples,include_explanations=explanations,random_seed=seed,requested_outputs=outputs or ["lesson"])
+        st.session_state.request=GenerationRequest(input_mode=mode,grade_level=grade,subject=subject,curriculum=curriculum,concepts=concepts,learning_goals=[x.strip() for x in goals.splitlines() if x.strip()],special_instructions=special or None,difficulty=difficulty,duration_minutes=duration,question_count=count,total_marks=marks,preferred_question_types=qtypes or [QuestionType.MCQ],include_hints=hints,include_worked_examples=examples,include_explanations=explanations,random_seed=internal_seed,requested_outputs=outputs or ["lesson"])
         st.session_state.config_saved_notice=True
         st.rerun()
     except ValidationError as e: st.error(e.errors()[0]["msg"])
@@ -187,7 +191,7 @@ if st.session_state.request is not None:
         if mode==InputMode.CONCEPTS.value:
             st.caption("Your entered concepts are ready. Supporting material is not required for this mode.")
         else:
-            uploaded=st.file_uploader("Supporting material",type=["pdf","png","jpg","jpeg","webp","html","htm","txt","md"],accept_multiple_files=True,help="Text PDFs, HTML, TXT, and Markdown are read directly. Images and scans require vision support.")
+            uploaded=st.file_uploader("Supporting material",type=["pdf","png","jpg","jpeg","webp","html","htm","txt","md"],accept_multiple_files=True,help="Text and scanned PDFs, images, HTML, TXT, and Markdown are analyzed. Scanned pages use the configured model's vision capability.")
             if uploaded:
                 st.dataframe([{"File":f.name,"Size":f"{f.size/1024:.1f} KB"} for f in uploaded],hide_index=True,width="stretch")
         analyze_clicked=st.button("Analyze source",type="primary",width="stretch",icon=":material/auto_awesome:")
@@ -203,6 +207,9 @@ if analyze_clicked:
         pairs=[(f.name,f.getvalue()) for f in (uploaded or [])];validate_uploads(pairs);st.session_state.sources=[extract_file(*x) for x in pairs]
         provider=OpenAIContentProvider(SETTINGS.openai_api_key,SETTINGS.openai_model)
         with st.status("Analyzing curriculum and paper pattern…",expanded=True) as status:
+            vision_sources=[s for s in st.session_state.sources if "vision" in s.get("status","")]
+            if vision_sources:
+                st.write(f"Reading {len(vision_sources)} scanned PDF/image source(s) with model vision")
             st.write(f"Sending the approved inputs to {SETTINGS.openai_model}")
             st.session_state.analysis=provider.analyze(st.session_state.request,st.session_state.sources)
             st.session_state.llm_model_used=SETTINGS.openai_model
@@ -213,7 +220,13 @@ if analyze_clicked:
 if st.session_state.analysis:
     section_heading(3,"Review the source plan","Confirm the concepts and paper structure before generation.")
     an=st.session_state.analysis
-    with st.container(border=True):
+    if st.session_state.approved:
+        st.success("Source plan approved. Generation controls are ready below.",icon=":material/check_circle:")
+    with st.expander(
+        "Source plan details",
+        expanded=not st.session_state.approved,
+        icon=":material/fact_check:",
+    ):
         st.markdown(f":blue-badge[{an.detected_subject or 'Subject'}] :violet-badge[Grade {an.detected_grade or '—'}] :green-badge[{an.overall_confidence:.0%} confidence]")
         st.caption("Your edits are authoritative and will be passed to the lesson and quiz writers.")
         review_left,review_right=st.columns(2)
@@ -224,7 +237,8 @@ if st.session_state.analysis:
         tq=sum(int(r["Questions"]) for r in changed);tm=sum(int(r["Marks"]) for r in changed)
         st.caption(f"Paper total: {tq} questions · {tm} marks")
         if an.evidence:
-            with st.expander("Source evidence",icon=":material/source:"):
+            with st.container(border=True):
+                st.markdown("**Source evidence**")
                 for e in an.evidence: st.write(f"**{e.filename}** — {e.short_excerpt}")
         if st.button("Approve source plan",type="primary",width="stretch",icon=":material/check_circle:"):
             if tq!=st.session_state.request.question_count or tm!=st.session_state.request.total_marks: st.error("Section totals must match the configured questions and marks.")
@@ -236,11 +250,11 @@ if st.session_state.analysis:
 if st.session_state.approved:
     section_heading(4,"Generate and preview","Create the approved lesson and quiz, then inspect the results.")
     with st.container(border=True):
-        st.caption(f"Generation seed {st.session_state.request.random_seed} · Model {SETTINGS.openai_model}")
+        st.caption(f"Powered by {SETTINGS.openai_model}. Visual aids are included when they improve understanding.")
         with st.container(horizontal=True):
             generate=st.button("Generate learning pack",type="primary",icon=":material/auto_awesome:")
-            new_paper=st.button("Use a new seed",icon=":material/shuffle:")
-        if new_paper: st.session_state.request.random_seed=random.randint(1,2_147_483_647);st.session_state.artifacts=None;st.rerun()
+            new_paper=st.button("Create another variation",icon=":material/shuffle:")
+        if new_paper: st.session_state.request.random_seed=random.SystemRandom().randint(1,2_147_483_647);st.session_state.artifacts=None;st.rerun()
     if generate:
         req=st.session_state.request;an=st.session_state.analysis
         try:
@@ -269,7 +283,7 @@ if st.session_state.approved:
                     gid=str(req.request_id)[:8];slug=f"grade-{req.grade_level}-{req.subject.lower().replace(' ','-')}";arts={}
                     if lesson is not None: arts[f"{slug}-concept-lesson.html"]=render_lesson_html(lesson,gid);arts[f"{slug}-concept-lesson.pdf"]=render_lesson_pdf(lesson,gid,req.random_seed)
                     if bp is not None: arts[f"{slug}-quiz.html"]=render_quiz_html(bp,qs,gid);student,key=render_quiz_pdfs(bp,qs,gid);arts[f"{slug}-quiz-student.pdf"]=student;arts[f"{slug}-answer-key.pdf"]=key
-                    arts[f"{slug}-learning-pack.zip"]=package_artifacts(arts,{"generation_id":gid,"seed":req.random_seed,"grade":req.grade_level,"subject":req.subject,"question_count":len(qs),"total_marks":sum(q.marks for q in qs),"validation":"passed","provider":"openai","model":SETTINGS.openai_model})
+                    arts[f"{slug}-learning-pack.zip"]=package_artifacts(arts,{"generation_id":gid,"grade":req.grade_level,"subject":req.subject,"question_count":len(qs),"total_marks":sum(q.marks for q in qs),"validation":"passed","provider":"openai","model":SETTINGS.openai_model})
                     st.session_state.artifacts={"files":arts,"lesson":lesson,"blueprint":bp,"questions":qs,"report":report};st.session_state.llm_model_used=SETTINGS.openai_model;status.update(label="Learning pack ready",state="complete")
         except Exception as e:
             st.error(f"LLM generation failed: {friendly_llm_error(e)}")
